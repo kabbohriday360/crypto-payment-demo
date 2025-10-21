@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Crypto Payment Demo</title>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #f5f5f5;
       display: flex;
       flex-direction: column;
@@ -35,6 +36,7 @@
     button:hover {
       background-color: #0044cc;
     }
+    #result { margin-top: 12px; word-break: break-word; text-align: left; }
   </style>
 </head>
 <body>
@@ -48,24 +50,41 @@
       <option value="ETH">Ethereum (ETH)</option>
       <option value="USDT">Tether (USDT)</option>
     </select>
-    <button onclick="sendPayment()">Pay Now</button>
+    <button id="payBtn">Pay Now</button>
     <p id="result"></p>
   </div>
 
   <script>
+    document.getElementById("payBtn").addEventListener("click", sendPayment);
+
     async function sendPayment() {
       const amount = document.getElementById("amount").value;
       const coin = document.getElementById("coin").value;
 
-      const res = await fetch("/create-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, coin }),
-      });
-      const data = await res.json();
+      if (!amount || Number(amount) <= 0) {
+        document.getElementById("result").innerText = "দয়া করে সঠিক এমাউনট দিন।";
+        return;
+      }
 
-      document.getElementById("result").innerHTML =
-        `✅ Payment Created! <br>Send ${amount} ${coin} to wallet: <b>${data.wallet}</b>`;
+      try {
+        const res = await fetch("/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, coin })
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          document.getElementById("result").innerText = `Error: ${res.status} ${txt}`;
+          return;
+        }
+
+        const data = await res.json();
+        document.getElementById("result").innerHTML =
+          `✅ Payment Created!<br>Send <b>${amount} ${coin}</b> to wallet: <b>${data.wallet}</b>`;
+      } catch (err) {
+        document.getElementById("result").innerText = "Network error: " + err.message;
+      }
     }
   </script>
 </body>
